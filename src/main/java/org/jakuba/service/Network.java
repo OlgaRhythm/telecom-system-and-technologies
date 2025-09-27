@@ -5,6 +5,7 @@ import org.jakuba.model.Transmitter;
 import org.jakuba.model.WalshCodeGenerator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -31,32 +32,36 @@ public class Network {
                    int numReceivers,
                    List<String> words,
                    int walshSize) {
-        Objects.requireNonNull(words, "words must not be null");
+        Objects.requireNonNull(words, "Кодовое слово не должно быть null");
         if (numTransmitters < 0 || numReceivers < 0) {
-            throw new IllegalArgumentException("counts must be >= 0");
+            throw new IllegalArgumentException("Количество должно быть >= 0");
         }
         if (walshSize < 1 || (walshSize & (walshSize - 1)) != 0) {
-            throw new IllegalArgumentException("walshSize must be a power of two (1,2,4,8,...)");
+            throw new IllegalArgumentException("Размер кода Уолша должен быть степенью двойки (1,2,4,8,...)");
         }
 
         this.channel = new Channel();
         this.hadamard = WalshCodeGenerator.generate(walshSize);
         this.txExecutor = Executors.newFixedThreadPool(Math.max(1, numTransmitters));
+        System.out.println("=== Initialization ===");
 
-        // Создаём приёмников (подписываются в конструкторе на канал)
+        // Создание передатчиков (не запускаем их)
+        for (int i = 0; i < numTransmitters; i++) {
+            String word = words.get(i % words.size());
+            int[] walshCode = hadamard[i % hadamard.length].clone();
+            Transmitter tx = new Transmitter(i, word, walshCode, channel);
+            System.out.println("Transmitter " + i + " использует код: " + Arrays.toString(walshCode));
+            transmitters.add(tx);
+        }
+
+        // Создание приёмников (подписываются в конструкторе на канал)
         for (int i = 0; i < numReceivers; i++) {
-            int[] code = hadamard[i % hadamard.length].clone();
-            Receiver r = new Receiver(i, code, channel);
+            int[] walshCode = hadamard[i % hadamard.length].clone();
+            Receiver r = new Receiver(i, walshCode, channel);
+            System.out.println("Receiver " + i + " использует код: " + Arrays.toString(walshCode));
             receivers.add(r);
         }
 
-        // Создаём передатчиков (не запускаем их)
-        for (int i = 0; i < numTransmitters; i++) {
-            String word = words.get(i % words.size());
-            int[] code = hadamard[i % hadamard.length].clone();
-            Transmitter tx = new Transmitter(i, word, code, channel);
-            transmitters.add(tx);
-        }
     }
 
     /**
@@ -67,20 +72,20 @@ public class Network {
      * @throws InterruptedException если поток прерван
      */
     public void runOnce(long timeoutSeconds) throws InterruptedException {
+        System.out.println("=== Transmitting started ===");
         if (transmitters.isEmpty()) {
             // просто broadcast пустой эфир (ничего не придёт)
             channel.broadcast();
             return;
         }
 
-        // Для каждого передатчика вызываем transmit() в пуле (не стартуем run()/sleep)
+        // Для каждого передатчика вызываем transmit() в пуле
         List<Future<?>> futures = new ArrayList<>();
         for (Transmitter tx : transmitters) {
-            // используем лямбду, чтобы вызвать именно transmit() и не зависеть от run()
             futures.add(txExecutor.submit(tx::transmit));
         }
 
-        // Ждём публикаций (timeout guard)
+        // Ждём публикаций
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
         for (Future<?> f : futures) {
             long timeLeft = deadline - System.nanoTime();
@@ -99,7 +104,7 @@ public class Network {
             }
         }
 
-        // Когда предполагается, что все передатчики опубликовали свои сигналы, собираем и трансмитим суммарный сигнал
+        // Когда предполагается, что все передатчики опубликовали свои сигналы, собираем суммарный сигнал
         channel.broadcast();
     }
 

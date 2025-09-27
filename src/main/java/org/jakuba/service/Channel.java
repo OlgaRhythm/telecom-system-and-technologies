@@ -1,6 +1,7 @@
 package org.jakuba.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -25,7 +26,7 @@ public class Channel {
     }
 
     // Когда все передатчики отдали сигнал,
-    // можно сложить их и отправить в эфир
+    // складываем их и отправить в эфир
     public synchronized void broadcast() {
         if (buffer.isEmpty()) return;
 
@@ -37,6 +38,8 @@ public class Channel {
                 combined[i] += signal[i];
             }
         }
+
+        System.out.println("Полученный сигнал на канале: " + Arrays.toString(combined));
 
         // Рассылаем всем подписчикам
         for (Consumer<int[]> subscriber : subscribers) {

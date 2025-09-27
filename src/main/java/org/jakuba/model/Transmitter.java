@@ -3,10 +3,8 @@ package org.jakuba.model;
 import org.jakuba.service.Channel;
 
 import java.util.Arrays;
-import java.util.Random;
-import java.util.concurrent.BlockingQueue;
 
-public class Transmitter extends Thread{
+public class Transmitter {
     final private int id;
     final private String word;
     final private int[] walshCode;
@@ -42,19 +40,5 @@ public class Transmitter extends Thread{
         int[] codedSignal = convertByWalshCode();
         channel.publish(codedSignal);
     }
-
-    @Override
-    public void run() {
-        transmit();
-        Random random = new Random();
-        int timeToWait = random.nextInt();
-
-        try {
-            Thread.sleep(timeToWait);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
 
 }

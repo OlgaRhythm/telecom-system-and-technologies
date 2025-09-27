@@ -7,7 +7,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) throws InterruptedException {
         // Слова, которые будут передавать передатчики
-        List<String> words = List.of("HELLO", "CDMA ", "JAVA ", "WORLD");
+        List<String> words = List.of("DOG", "CAT", "HAM", "SUN");
 
         // Создаём сеть:
         // 4 передатчика, 4 приёмника, коды Уолша длиной 8

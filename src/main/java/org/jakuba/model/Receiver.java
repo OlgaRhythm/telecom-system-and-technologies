@@ -36,6 +36,9 @@ public class Receiver {
             bits.add(sum > 0 ? 1 : 0);
         }
 
+        System.out.println("Receiver " + id + " обработал биты сообщения кодом и нашел суммы: " + bits);
+
+
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < bits.size(); i += 8) {
             int ascii = 0;
