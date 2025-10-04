@@ -3,7 +3,7 @@ package org.jakuba.model;
 public class WalshCodeGenerator {
 
     /**
-     * Генерирует матрицу Уолша (матрицу Хэдемарда) размера n x n.
+     * Генерирует матрицу Уолша (матрицу Адамара) размера n x n.
      * n должен быть степенью двойки: 2, 4, 8, ...
      */
     public static int[][] generate(int n) {
